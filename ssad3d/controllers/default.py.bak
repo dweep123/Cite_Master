@@ -1,0 +1,175 @@
+# -*- coding: utf-8 -*-
+### required - do no delete
+#def user(): return dict(form=auth())
+#def download(): return response.download(request,db)
+#def call(): return service()
+### end requires
+#def index():
+ #   return dict()
+
+#def error():
+ #   return dict()
+from gluon.tools import fetch
+import re
+listf=[]
+#ret1=[]
+count=0
+bigans=[]
+def index():
+    form=SQLFORM(db.input)
+    if form.process().accepted:
+        response.flash = 'you entred'
+        redirect(URL('final_ans'))
+    return dict(form=form)
+def year_user(index_yr):   #index_yr - only in this code not in main one
+    flag=index_yr
+    redirect(URL('final_ans()'))
+    flag=0
+    #return dict(ans=ll1[0],l_yr=ll1[1])
+def extract1(url,l1):
+    ret=[]
+    ret1=[]
+    html=fetch(url)
+    html_splitted=html.split("<A HREF=\"citation.cfm")
+    ht=html_splitted[0]
+    del html_splitted[0]
+    k=html_splitted[0].split('>')
+    if k[1][:-3]==l1[0]:
+        k=html_splitted[0].find('\"')
+        s="http://dl.acm.org/citation.cfm"+html_splitted[0][:k]
+        ret.append(s.split('&preflayout')[0]+'&preflayout=flat')
+        ret1.append('0')
+        ret1.append('0')
+    else:
+        ret1=['0','1']
+        for i in range(0,l1[2]):
+            k=html_splitted[i].find('\"')
+            s="http://dl.acm.org/citation.cfm"+html_splitted[i][:k]
+            ret.append(s.split('&preflayout')[0]+'&preflayout=flat')
+    return ret,ret1
+def sorting():
+    bigans=[]
+    l1=u_filter()
+    #ret1=eval(request.args(0)[1])
+    #url=ret1[eval(request.args(0)[0])]
+    url1="http://dl.acm.org/results.cfm?h=1&query="+'+'.join(l1[0].split())
+    if request.args(0)=='0':
+        #url="http://dl.acm.org/results.cfm?h=1&query="+'+'.join(l1[0].split())
+        url=url1
+    elif request.args(0)=='1':
+        html=fetch(url1)
+        html_splitted=html.split("Sort by")
+        k=html_splitted[1].split("<option value=\"")[4].split('\"')[0]
+        url="http://dl.acm.org/"+k        
+        #url="http://dl.acm.org/results.cfm?query="+l1[0]+"&querydisp="+l1[0]+"&srt=meta_published_date dsc&short=0&coll=DL&dl=ACM&source_disp=&source_query=Owner%3AACM&since_month=&since_year=&before_month=&before_year=&termshow=matchall&range_query=&CFID=127637614&CFTOKEN=56646685"
+    fst_l=[]
+    ret1=[]
+    fst_l,ret1=extract1(url,l1)
+    #for l in fst_l:
+     #   listf.append(cite(l))
+    global bigans
+    bigans=[]
+    global count
+    count=0
+    rec(fst_l,l1,bigans)
+    #global listf
+    return dict(bigans=bigans,level=l1[1],top=l1[2],ret1=ret1,url=url)
+def final_ans():
+    bigans=[]
+    l1=u_filter() 
+    url="http://dl.acm.org/results.cfm?h=1&query="+'+'.join(l1[0].split())
+    fst_l=[]
+    ret1=[]
+    fst_l,ret1=extract1(url,l1)
+    #for l in fst_l:
+     #   listf.append(cite(l))
+    rec(fst_l,l1,bigans)
+    #global listf
+    return dict(bigans=bigans,level=l1[1],top=l1[2],ret1=ret1,url=url)
+def rec(list1,l1,bigans):
+    global count
+    count=count+1
+    global listf
+    listf.append([])
+    for x in list1:
+        if x!='':
+            z=cite(x)
+            #global listf
+            #listf[count-1].append(z)
+            bigans.append(z)
+            if count < l1[1]:
+                rec(z[5],l1,bigans[-1])
+    count=count-1
+    return
+def cite(url):
+    if url=='':
+        return []
+    l1=u_filter()
+    html=fetch(url)
+    temp=[]
+        #temp=[]
+    d=re.search('<meta name="citation_title"[\w\W]*?>',html).group()
+    d=bold(d)
+        #temp.append(d.split('>')[0][9:-1])
+    temp.append(d.split('=')[2][1:-2])
+    temp.append(url)
+    c=re.search('<meta name="citation_authors"[\w\W]*?>',html).group()
+    c=bold(c)
+    if l1[3]==1:
+       #temp.append(d.split('>')[0][9:-1])
+        temp.append(c.split('=')[2][1:-2])
+    else:
+        temp.append(-1)
+    b=re.search('<meta name="citation_date"[\w\W]*?>',html).group()
+    b=bold(b)
+    if l1[5]==1:
+        temp.append(b.split('=')[2][1:-2])
+    else:
+        temp.append(-1)
+    s=re.search('CITED BY[\w\W]*?INDEX TERMS',html).group()
+    if 'Citings are not available' not in s:
+        e=re.search('\d* Citations',s)
+        if l1[4]!=1:
+            temp.append(-1)
+        elif e!=None:
+            temp.append(e.group().split()[0])
+        else:                                                                            
+            temp.append(1)
+        i=0
+        cit=[]
+        while i < l1[2]:
+            i+=1
+            s1=re.search('<a href[\w\W]*?</a>',s)
+            if s1==None:
+                cit.append('')
+            elif s1!=None:
+                k=s.find(s1.group())
+                #k1=s[:k]
+                cit.append(("http://dl.acm.org/"+s1.group().split('\"')[1]).split('&preflayout')[0]+'&preflayout=flat')
+                s=s[k+2:]
+           
+        temp.append(cit)
+    else:
+        if l1[4]==1:
+            temp.append(0)
+        else:
+            temp.append(-1)
+        temp.append([])
+    return temp
+def u_filter():
+    inpu=db().select(db.input.ALL)
+    for inp in inpu:
+        key=inp.keywords
+        level=inp.level
+        top=inp.top
+        auth=inp.author
+        cited_by=inp.cited_by
+        year=inp.year
+    return [key,level,top,auth,cited_by,year]
+def bold(d):
+    pre=""
+    while pre!=d:
+        pre=d
+        d=d.replace("<b>","");
+        d=d.replace("</b>","");
+    return d

@@ -1,0 +1,151 @@
+{{extend 'layout.html'}}
+<ul type="none">
+{{abss=''}}
+{{auth=[]}}
+{{count=0}}
+{{import re}}
+{{f=open('.Rough','w')}}
+{{def noun(string1):}}
+    {{string2=''}}
+    {{import nltk}}
+    {{text = nltk.word_tokenize(string1)}}
+    {{l=nltk.pos_tag(text)}}
+    {{for t in l:}}
+        {{if t[1]=='NN':}}
+            {{string2=string2+t[0]+' '}}
+        {{pass}}
+    {{pass}}
+    {{return string2}}
+{{def print1(bigans):}}
+    {{global count}}
+    {{for x in range(0,len(bigans)):}}
+        {{if type(bigans[x]) is list:}}
+            {{if count==0:}}
+                {{count=count+1}}
+                {{print1(bigans[x])}}
+            {{elif count!=0 and x!=7:}}
+                {{count=count+1}}
+                {{print1(bigans[x])}}
+            {{pass}}
+         {{else:}}
+             {{if x==2:}}
+             {{=A('---------------'*(count-1)+bigans[0], _href=bigans[2])}}
+             {{f.write('--'*(count-1)+'>'+bigans[0]+'\n')}}
+             {{elif x==3 and bigans[x]!=-1:}}
+                 {{global auth}}
+                 {{=LI('---------------'*(count-1)+'Authors-')}}
+                 {{f.write('--'*(count-1)+'>'+'Authors-'+'\n')}}
+                 {{l=bigans[x].split(';')}}
+                 {{for p in l:}}
+                     {{if ',' in p:}}
+                         {{k=p.split(',')[1]+' '+p.split(',')[0]}}
+                     {{else:}}
+                         {{k=p}}
+                     {{pass}}
+                     {{=LI('---------------'*(count-1)+k)}}
+                     {{f.write('--'*(count-1)+'>'+k+'\n')}}
+                     {{auth.append(k)}}
+                 {{pass}}
+             {{elif x==6 and bigans[x]!=-1:}}
+                {{=LI('---------------'*(count-1)+'Cited by:'+str(bigans[x]))}}
+                {{f.write('--'*(count-1)+'>'+'Cited by:'+str(bigans[x])+'\n')}}
+             {{elif x==4 and bigans[x]!=-1:}}
+                {{=LI('---------------'*(count-1)+'Date:'+bigans[x])}}
+                {{f.write('--'*(count-1)+'>'+'Date:'+bigans[x]+'\n')}}
+             {{elif x==5 and bigans[x]!=-1:}}
+                {{abss1=re.sub(r'\n', ' ', bigans[x])}}
+                {{abss1=re.sub(r'\s\s(\s)*', ' ',abss1)}}
+                {{abs1=re.sub(r'([^\s\.\w]|_)+', '', abss1)}}
+                {{=LI(A('---------------'*(count-1)+'Abstract:',_href=URL("abstract1", args=[abs1])))}}
+                {{f.write('--'*(count-1)+'>'+'Abstract:'+bigans[x]+'\n')}}
+                {{global abss}}
+                {{abss1=noun(bigans[x])}}
+                {{abss=abss+abss1}}
+             {{pass}}
+         {{pass}}
+     {{pass}}
+     {{count=count-1}}
+     {{return}}
+<div style="text-align:right">
+{{=LI('Sort by: ')}}
+{{=LI(A('Relevence ',_href=URL("sorting", args='0')))}}
+{{=LI(A('Publication date ',_href=URL("sorting", args='1')))}}
+</div>
+{{pass}}
+{{print1(bigans)}}
+{{from collections import Counter}}
+{{ word=abss.split(' ')}}
+{{c = Counter(word)}} 
+{{most=c.most_common(12)}}
+{{l1=[]}}
+{{=LI('Most common words: ')}}
+{{f.write('Most common words: '+'\n')}}
+{{for ele in most:}}
+ <!-- {{=LI(ele[0])}} -->
+ {{l1.append(ele[0])}}
+{{pass}}
+{{j=' ,'.join(l1)}}
+{{=LI(j)}}
+{{=LI('\n')}}
+{{f.write(j+'\n')}}
+{{l1=[]}}
+{{ word=auth}}
+{{c = Counter(word)}}
+{{=LI('Most common authors: ')}}
+{{f.write('Most common authors: '+'\n')}}
+{{most=c.most_common(5)}}
+{{for ele in most:}}
+ {{l1.append(ele[0])}}
+{{pass}}
+{{j=' ,'.join(l1)}}
+{{=LI(j)}}
+{{=LI('\n')}}
+{{f.write(j+'\n')}}
+{{f.close()}}
+{{from reportlab.lib.enums import TA_JUSTIFY}}
+{{from reportlab.lib.pagesizes import letter}}
+{{from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image}}
+{{from reportlab.lib.units import inch}}
+{{from os import path}}
+{{import reportlab}}
+
+
+{{import os}}
+{{from reportlab.lib.units import inch, cm}}
+{{from reportlab.lib.pagesizes import A4}}
+{{from reportlab.lib.styles import ParagraphStyle}}
+{{from reportlab.lib.styles import getSampleStyleSheet}}
+{{styleSheet = getSampleStyleSheet()}}
+{{mystyle = ParagraphStyle(name='normal',fontName='Courier',
+                fontSize=10, 
+            alignment=TA_JUSTIFY, 
+            leading=1.2*12,
+            parent=styleSheet['Normal'])}}      
+      
+{{model_report = '/home/maneesha/Downloads/web2py/.Rough'}}
+
+{{doc = SimpleDocTemplate("Cite_m.pdf",  \
+                       rightMargin=40, leftMargin=40, \
+                       topMargin=40, bottomMargin=25, \
+                        pageSize=A4)}}
+
+
+{{elements = []}}  
+
+{{infile   = file(model_report).read()}}
+{{report_paragraphs = infile.split("\n")}}
+{{for para in report_paragraphs:  }}
+    {{para1 = '<font face="Courier" >%s</font>' % para}}
+    {{elements.append(Paragraph(para1, style=mystyle))}}
+{{pass}}
+{{doc.build(elements)}}
+{{from gluon.tools import Mail
+mail = Mail()
+mail.settings.server = 'smtp.gmail.com:587'
+mail.settings.sender = 'papireddygarimaneesha88@gmail.com'
+mail.settings.login = 'papireddygarimaneesha88:peddamallu'}}
+{{mail.send(to=[email],
+  subject='Cite_M Pdf',
+  message='Respected Sir/Madam,\n\t The attachment to this mail is a pdf of result of your query in our application Cite Master.Happy researching :) .\nThanking You.',
+  attachments = [Mail.Attachment('Cite_m.pdf')])}}
+</ul>

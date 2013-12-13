@@ -1,0 +1,45 @@
+{{extend 'layout.html'}}
+<ul type="none">
+{{count=0}}
+{{def print1(bigans):}}
+    {{global count}}
+    {{for x in range(0,len(bigans)):}}
+        {{if type(bigans[x]) is list:}}
+            {{if count==0:}}
+                {{count=count+1}}
+                {{print1(bigans[x])}}
+            {{elif count!=0 and x!=5:}}
+                {{count=count+1}}
+                {{print1(bigans[x])}}
+            {{pass}}
+         {{else:}}
+             {{if x==1:}}
+             {{=A('---------------'*(count-1)+bigans[0], _href=bigans[1])}}
+             {{elif x==2 and bigans[x]!=-1:}}
+                  {{=LI('---------------'*(count-1)+'Authors-')}}
+                 {{l=bigans[x].split(';')}}
+                 {{for p in l:}}
+                     {{if ',' in p:}}
+                         {{k=p.split(',')[1]+' '+p.split(',')[0]}}
+                     {{else:}}
+                         {{k=p}}
+                     {{pass}}
+                      {{=LI('---------------'*(count-1)+k)}} 
+                 {{pass}}
+             {{elif x==4 and bigans[x]!=-1:}}
+                {{=LI('---------------'*(count-1)+'Cited by:'+str(bigans[x]))}}
+             {{elif x==3 and bigans[x]!=-1:}}
+                {{=LI('---------------'*(count-1)+'Date:'+bigans[x])}}
+             {{pass}}          
+         {{pass}}
+     {{pass}}
+     {{count=count-1}}
+     {{return}}
+<div style="text-align:right">
+{{=LI('Sort by: ')}}
+{{=LI(A('Relevence ',_href=URL("sorting", args=ret1[0])))}}
+{{=LI(A('Publication date ',_href=URL("sorting", args=ret1[1])))}}
+</div>
+{{pass}}
+{{print1(bigans)}}
+</ul>

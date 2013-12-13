@@ -1,0 +1,4 @@
+{{extend 'layout.html'}}
+<ul>
+{{=LI(abst[0])}}
+</ul>

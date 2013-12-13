@@ -1,0 +1,5 @@
+{{extend 'layout.html'}}
+{{ for i in range(0,len(abss1)-1):}}
+{{abss1[i]=abss1[i]+'.'}}
+{{=LI(abss1[i])}}
+{{pass}}
